@@ -216,184 +216,261 @@ for i = 1:size(propellers,1)
                 end
             end
         end
-
-
-        % %% MATCHED RPM FOR FORWARD FLIGHT
-        % for x = 1:numel(V_inf)
-        % 
-        %     V = V_inf(x);
-        %     theta_FP = 0;
-        % 
-        %     K = 0.5*rho*V^2;
-        %     S_ref_fun = @(a) S_top*sin(a) + S_front*cos(a);
-        % 
-        %     Df_fun = @(a) K*Cd_frame*S_ref_fun(a);
-        %     Lf_fun = @(a) K*Cl_frame*S_ref_fun(a);
-        % 
-        %     A_fun = @(a) W + Df_fun(a)*sin(theta_FP) ...
-        %                 + Lf_fun(a)*cos(theta_FP);
-        % 
-        %     B_fun = @(a) Df_fun(a)*cos(theta_FP) ...
-        %                 - Lf_fun(a)*sin(theta_FP);
-        % 
-        %     angle_equation = @(a) a-theta_FP ...
-        %         - atan2(B_fun(a),A_fun(a));
-        % 
-        %     alpha = fzero(angle_equation,[0 pi/2]);
-        % 
-        %     T_required = hypot(A_fun(alpha), ...
-        %                        B_fun(alpha))/N_rotors;
-        % 
-        %     data_forward = apcProp(prop_name{i},,0.12);
-        %     % Initial estimate using static CT
-        %     RPM_forward = 60*sqrt(T_required/(CT0*rho*D^4));
-        % 
-        %     %% Fixed-point iteration
-        %     converged = false;
-        %     for iter = 1:100
-        % 
-        %         n = RPM_forward/60;
-        %         J = V/(n*D);
-        %         J_axial = J*sin(alpha);
-        % 
-        %         if J_axial >= 0.95*min(J0T,J0P)
-        %             break;
-        %         end
-        % 
-        %         % CT_axial = 0.02791 - 0.06543*J_axial ...
-        %         %     + 0.11867*beta + 0.27334*beta^2 ...
-        %         %     - 0.28852*beta^3 + 0.02104*J_axial^3 ...
-        %         %     - 0.23504*J_axial^2 ...
-        %         %     + 0.18677*beta^2*J_axial;
-        %         % 
-        %         % delta = (3/2)*cos(beta_prime) * ...
-        %         %     (1 + sigma_e/tan(beta_prime) * ...
-        %         %     (1 + sqrt(1+2*tan(beta_prime)/sigma_e)) ...
-        %         %     *(1-cos(alpha)));
-        %         % 
-        %         % numerator = (J*cos(alpha)/(pi*r_prime))^2;
-        %         % 
-        %         % eta_T = 1 + numerator*delta / ...
-        %         %     (2*(1-J_axial/J0T));
-        %         % 
-        %         % CT_corrected = eta_T*CT_axial;
-        % 
-        %         if ~isfinite(CT_corrected) || CT_corrected <= 0
-        %             break;
-        %         end
-        % 
-        %         RPM_new = 60*sqrt(T_required / ...
-        %             (CT_corrected*rho*D^4));
-        % 
-        %         error_RPM = abs(RPM_new-RPM_forward);
-        %         RPM_forward = RPM_new;
-        % 
-        %         if error_RPM < 0.01
-        %             converged = true;
-        %             break;
-        %         end
-        %     end
-        %     if ~converged || ~isfinite(RPM_forward)
-        %         continue;
-        %     end
-        % 
-        %     %% Recalculate at final RPM
-        %     n = RPM_forward/60;
-        %     J = V/(n*D);
-        %     J_axial = J*sin(alpha);
-        % 
-        %     if J_axial >= 0.95*min(J0T,J0P)
-        %         continue;
-        %     end
-        % 
-        %     CT_axial = 0.02791 - 0.06543*J_axial ...
-        %         + 0.11867*beta + 0.27334*beta^2 ...
-        %         - 0.28852*beta^3 + 0.02104*J_axial^3 ...
-        %         - 0.23504*J_axial^2 ...
-        %         + 0.18677*beta^2*J_axial;
-        % 
-        %     CP_axial = 0.01813 - 0.06218*beta ...
-        %         + 0.00343*J_axial + 0.35712*beta^2 ...
-        %         - 0.23774*beta^3 + 0.07549*beta*J_axial ...
-        %         - 0.1235*J_axial^2;
-        % 
-        %     numerator = (J*cos(alpha)/(pi*r_prime))^2;
-        % 
-        %     eta_T = 1 + numerator*delta / ...
-        %         (2*(1-J_axial/J0T));
-        % 
-        %     eta_P = 1 + numerator*delta / ...
-        %         (2*(1-J_axial/J0P));
-        % 
-        %     CT_corrected = eta_T*CT_axial;
-        %     CP_corrected = eta_P*CP_axial;
-        % 
-        %     Thrust = CT_corrected*rho*n^2*D^4;
-        %     Pshaft = CP_corrected*rho*n^3*D^5;
-        % 
-        %     if ~isfinite(Thrust) || ~isfinite(Pshaft) ...
-        %             || Thrust <= 0 || Pshaft <= 0 ...
-        %             || abs(Thrust-T_required) > 0.001*T_required
-        %         continue;
-        %     end
-        % 
-        %     Torque = Pshaft/(2*pi*n);
-        %     Pelec_rotor = Pshaft/eta_ESC_motor;
-        %     Pelec_total = N_rotors*Pelec_rotor + avionics_power;
-        %     I_rotor = Pelec_rotor/V_battery;
-        %     I_battery = Pelec_total/V_battery;
-        %     endurance_min = E_usable/Pelec_total*60;
-        % 
-        %     %% Save matched results
-        %     row = common;
-        %     row.RPM = RPM_forward;
-        %     row.V_inf = V;
-        %     row.Alpha_deg = rad2deg(alpha);
-        %     row.RequiredThrustPerRotor_N = T_required;
-        %     row.J = J;
-        %     row.J_axial = J_axial;
-        %     row.CT_corrected = CT_corrected;
-        %     row.CP_corrected = CP_corrected;
-        %     row.eta_T = eta_T;
-        %     row.eta_P = eta_P;
-        %     row.ThrustPerRotor_N = Thrust;
-        %     row.ShaftPowerPerRotor_W = Pshaft;
-        %     row.TorquePerRotor_Nm = Torque;
-        %     row.EstimatedElectricalPowerPerRotor_W = Pelec_rotor;
-        %     row.EstimatedTotalElectricalPower_W = Pelec_total;
-        %     row.EstimatedBatteryCurrent_A = I_battery;
-        %     row.EstimatedEndurance_min = endurance_min;
-        %     row.EstimatedDCInputPerRotor_A = I_rotor;
-        % 
-        %     row.PassesBasicElectricalScreen = ...
-        %         RPM_forward < RPM_no_load && ...
-        %         I_rotor <= ESC_current_limit && ...
-        %         I_battery <= I_battery_max;
-        %     row.ThrustError_N = Thrust - T_required;
-        %     row.BelowIdealNoLoadRPM = RPM_forward < RPM_no_load;
-        %     row.WithinAssumedESCDCInputLimit = I_rotor <= ESC_current_limit;
-        %     row.WithinRatedBatteryC = I_battery <= I_battery_max;
-        % 
-        %     if isempty(matched_rows)
-        %         matched_rows = row;
-        %     else
-        %         matched_rows(end+1) = row;
-        %     end
-        % end
+        
+        %% MATCHED RPM FOR FORWARD FLIGHT — APC DATABASE
+        
+        % Search interval for RPM matching
+        RPM_search = 4000:250:9000;
+        
+        for x = 1:numel(V_inf)
+        
+            V = V_inf(x);
+            theta_FP = 0;
+        
+            %% STEP 1: FORCE EQUILIBRIUM (POLLET)
+            K = 0.5*rho*V^2;
+        
+            S_ref_fun = @(a) S_top*sin(a) + S_front*cos(a);
+        
+            Df_fun = @(a) K*Cd_frame*S_ref_fun(a);
+            Lf_fun = @(a) K*Cl_frame*S_ref_fun(a);
+        
+            A_fun = @(a) W + Df_fun(a)*sin(theta_FP) ...
+                            + Lf_fun(a)*cos(theta_FP);
+        
+            B_fun = @(a) Df_fun(a)*cos(theta_FP) ...
+                            - Lf_fun(a)*sin(theta_FP);
+        
+            angle_equation = @(a) a-theta_FP ...
+                                - atan2(B_fun(a),A_fun(a));
+        
+            alpha = fzero(angle_equation,[0 pi/2]);
+        
+            T_required = hypot(A_fun(alpha), ...
+                               B_fun(alpha))/N_rotors;
+        
+        
+            %% STEP 2: FIND RPM THAT MATCHES REQUIRED THRUST
+        
+            % APC axial-only thrust equation
+            thrust_error = @(rpm) apcForwardThrust( ...
+                rpm, prop_name{i}, V, alpha, rho, D) ...
+                - T_required;
+        
+            % Evaluate residual at candidate RPMs
+            errors = arrayfun(thrust_error,RPM_search);
+        
+            % Find adjacent valid points bracketing a root
+            valid = isfinite(errors);
+        
+            exact_idx = find(valid & abs(errors) < 1e-8,1);
+        
+            if ~isempty(exact_idx)
+        
+                RPM_forward = RPM_search(exact_idx);
+        
+            else
+        
+                bracket_idx = find( ...
+                    valid(1:end-1) & valid(2:end) & ...
+                    errors(1:end-1).*errors(2:end) < 0, ...
+                    1,'first');
+        
+                if isempty(bracket_idx)
+                    % Required thrust not bracketed by valid APC data
+                    continue;
+                end
+        
+                rpm_low = RPM_search(bracket_idx);
+                rpm_high = RPM_search(bracket_idx+1);
+        
+                try
+                    RPM_forward = fzero(thrust_error, ...
+                                        [rpm_low,rpm_high]);
+                catch
+                    continue;
+                end
+        
+            end
+        
+        
+            %% STEP 3: INTERPOLATE APC AT MATCHED RPM
+        
+            n = RPM_forward/60;
+        
+            J = V/(n*D);
+            J_axial = J*sin(alpha);
+        
+            try
+                data_prop = apcProp( ...
+                    prop_name{i}, RPM_forward, J_axial);
+        
+                CT_axial = data_prop.Ct;
+                CP_axial = data_prop.Cp;
+            catch
+                continue;
+            end
+        
+            if ~isfinite(CT_axial) || ~isfinite(CP_axial) ...
+                    || CT_axial <= 0 || CP_axial <= 0
+                continue;
+            end
+        
+        
+            %% STEP 4: OBLIQUE FLOW CORRECTION
+            % APC axial-only baseline.
+            % No J0T or J0P required.
+        
+            eta_T = 1;
+            eta_P = 1;
+        
+            CT_corrected = eta_T*CT_axial;
+            CP_corrected = eta_P*CP_axial;
+        
+        
+            %% STEP 5: THRUST AND SHAFT POWER
+        
+            Thrust = CT_corrected*rho*n^2*D^4;
+            Pshaft = CP_corrected*rho*n^3*D^5;
+        
+            % Check matched thrust accuracy
+            if ~isfinite(Thrust) || ~isfinite(Pshaft) ...
+                    || Thrust <= 0 || Pshaft <= 0 ...
+                    || abs(Thrust-T_required) > 0.001*T_required
+                continue;
+            end
+        
+            Torque = Pshaft/(2*pi*n);
+        
+        
+            %% STEP 6: ELECTRICAL POWER AND ENDURANCE
+        
+            Pelec_rotor = Pshaft/eta_ESC_motor;
+        
+            Pelec_total = N_rotors*Pelec_rotor ...
+                          + avionics_power;
+        
+            I_rotor = Pelec_rotor/V_battery;
+        
+            I_battery = Pelec_total/V_battery;
+        
+            endurance_min = E_usable/Pelec_total*60;
+        
+            % Optional estimated range at constant speed
+            range_km = V*endurance_min*60/1000;
+        
+        
+            %% STEP 7: SAVE MATCHED RESULTS
+        
+            row = common;
+        
+            row.RPM = RPM_forward;
+            row.V_inf = V;
+            row.Alpha_deg = rad2deg(alpha);
+        
+            row.RequiredThrustPerRotor_N = T_required;
+        
+            row.J = J;
+            row.J_axial = J_axial;
+        
+            row.CT_axial = CT_axial;
+            row.CP_axial = CP_axial;
+        
+            row.CT_corrected = CT_corrected;
+            row.CP_corrected = CP_corrected;
+        
+            row.eta_T = eta_T;
+            row.eta_P = eta_P;
+        
+            row.ThrustPerRotor_N = Thrust;
+            row.ShaftPowerPerRotor_W = Pshaft;
+            row.TorquePerRotor_Nm = Torque;
+        
+            row.EstimatedElectricalPowerPerRotor_W = Pelec_rotor;
+            row.EstimatedTotalElectricalPower_W = Pelec_total;
+        
+            row.EstimatedBatteryCurrent_A = I_battery;
+            row.EstimatedEndurance_min = endurance_min;
+            row.EstimatedRange_km = range_km;
+            row.EstimatedDCInputPerRotor_A = I_rotor;
+        
+            row.ThrustError_N = Thrust-T_required;
+        
+            %% ELECTRICAL SCREENING
+        
+            row.BelowIdealNoLoadRPM = ...
+                RPM_forward < RPM_no_load;
+        
+            row.WithinAssumedESCDCInputLimit = ...
+                I_rotor <= ESC_current_limit;
+        
+            row.WithinRatedBatteryC = ...
+                I_battery <= I_battery_max;
+        
+            row.PassesBasicElectricalScreen = ...
+                row.BelowIdealNoLoadRPM && ...
+                row.WithinAssumedESCDCInputLimit && ...
+                row.WithinRatedBatteryC;
+        
+        
+            %% APPEND RESULT
+        
+            if isempty(matched_rows)
+                matched_rows = row;
+            else
+                matched_rows(end+1) = row;
+            end
+        end
     end
 end
 
 %% 4. Save and display
 ForwardAll = struct2table(all_rows);
-% ForwardMatched = struct2table(matched_rows);
-% plot(row.Battery_Ah, row.EstimatedEndurance_min)
+ForwardMatched = struct2table(matched_rows);
+
 size(ForwardAll)
-% size(ForwardMatched)
+size(ForwardMatched)
 
 writetable(ForwardAll,'forward_all_points_matlab.csv');
-% writetable(ForwardMatched,'forward_matched_matlab.csv');
+writetable(ForwardMatched,'forward_matched_matlab.csv');
 
 fprintf('kelar\n');
 % fprintf('NOTE: APC-derived coefficients and assumed masses, efficiency, limits.\n');
 % fprintf('Not validated Gemfan/SunnySky performance predictions.\n');
+
+function T = apcForwardThrust(rpm, propName, V, alpha, rho, D)
+% Calculates axial-equivalent propeller thrust
+% using the APC performance database.
+
+T = NaN;
+
+if ~isfinite(rpm) || rpm <= 0
+    return;
+end
+
+n = rpm/60;
+
+% Pollet total advance ratio
+J = V/(n*D);
+
+% Axial advance ratio
+J_axial = J*sin(alpha);
+
+% Look up APC coefficients
+try
+    p = apcProp(propName,rpm,J_axial);
+catch
+    return;
+end
+
+CT = p.Ct;
+
+if ~isfinite(CT) || CT <= 0
+    return;
+end
+
+% Calculate thrust (N)
+T = CT*rho*n^2*D^4;
+end
+
 
