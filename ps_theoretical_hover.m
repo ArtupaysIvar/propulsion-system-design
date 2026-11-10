@@ -5,26 +5,39 @@ clear; clc; close all;
 
 %% 1. Aircraft and assumptions
 g = 9.80665;
-rho = 1.3;
+rho = 1.225;
 N_rotors = 4;
 m_without_battery = 1.20;  % kg, ASSUMED
 m_payload = 0.0;           % kg
-avionics_power = 10;       % W, ASSUMED
-usable_fraction = 0.80;    % ASSUMED
-eta_ESC_motor = 0.75;      % combined efficiency, ASSUMED
+avionics_power = 20;       % W, ASSUMED
+usable_fraction = 0.75;    % ASSUMED
+eta_ESC_motor = 0.8;      % combined efficiency, ASSUMED
 motor_KV = 880;            % RPM/V
 ESC_current_limit = 30;    % A, assumed battery-side per-rotor limit
 
 %% 2. Candidate inputs
 % Each row is one REAL propeller candidate: [diameter_in, pitch_in]
 propellers = [9 4.5; 9 4.7; 10 4.5; 10 4.7];
-RPM_values = 3000:500:9000;
+RPM_values = 4000:500:9000;
 
 % Each battery row: [cells, capacity_Ah, mass_kg, C_rating]
-batteries = [4 5.2 0.50 30;
-             4 6.5 0.60 30;
-             6 5.0 0.72 30];
-battery_names = {'4S_5200', '4S_6500', '6S_5000'};
+batteries = [
+    4  5.2   0.490  50;
+    4  6.5   0.550  60;
+    4  7.2   0.630  50;
+    4 10.0   0.890  25;
+    6  2.6   0.410  50;
+    6  3.7   0.590  50;
+    6  4.5   0.715  65;
+    6  5.2   0.74   50;
+    6  8.0   1.100  25
+    ];
+
+battery_names = {
+    '4S_5200', '4S_6500', '4S_7200', '4S_10000', ...
+    '6S_2600', '6S_3700', '6S_4500', '6S_5200', ...
+    '6S_8000'
+    };
 
 %% 3. Calculate all combinations
 all_rows = struct([]);
@@ -140,8 +153,9 @@ end
 HoverAll = struct2table(all_rows);
 HoverMatched = struct2table(matched_rows);
 
-writetable(HoverAll,'hover_all_points_matlab.csv');
-writetable(HoverMatched,'hover_matched_matlab.csv');
+writetable(HoverAll,'theory_hover_all_points_matlab.csv');
+writetable(HoverMatched,'theory_hover_matched_matlab.csv');
 
 % fprintf('NOTE: APC-derived coefficients and assumed masses, efficiency, limits.\n');
 % fprintf('Not validated Gemfan/SunnySky performance predictions.\n');
+disp("kelar")

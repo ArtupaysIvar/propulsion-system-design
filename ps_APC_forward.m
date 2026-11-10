@@ -4,7 +4,7 @@
 % APC-based static coefficients; battery and electrical inputs are illustrative.
 clear; clc; close all;
 
-m_without_battery = 1.30;  % kg, ASSUMED
+m_without_battery = 1.20;  % kg, ASSUMED
 usable_fraction = 0.75;    % ASSUMED
 eta_ESC_motor = 0.8;      % combined efficiency, ASSUMED
 % r_prime = 0.75;
@@ -16,7 +16,7 @@ S_top = 0.226;
 S_front = 0.09;
 
 g = 9.80665;
-rho = 1.3;
+rho = 1.225;
 N_rotors = 4;
 m_payload = 0.0;           % kg
 avionics_power = 20;       % W, ASSUMED
@@ -431,8 +431,8 @@ ForwardMatched = struct2table(matched_rows);
 size(ForwardAll)
 size(ForwardMatched)
 
-writetable(ForwardAll,'forward_all_points_matlab.csv');
-writetable(ForwardMatched,'forward_matched_matlab.csv');
+writetable(ForwardAll,'APC_forward_all_points_matlab.csv');
+writetable(ForwardMatched,'APC_forward_matched_matlab.csv');
 
 fprintf('kelar\n');
 % fprintf('NOTE: APC-derived coefficients and assumed masses, efficiency, limits.\n');

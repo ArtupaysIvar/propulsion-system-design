@@ -5,13 +5,13 @@
 clear; clc; close all;
 
 g = 9.80665;
-rho = 1.3;
+rho = 1.225;
 N_rotors = 4;
 m_without_battery = 1.20;  % kg, ASSUMED
 m_payload = 0.0;           % kg
-avionics_power = 10;       % W, ASSUMED
-usable_fraction = 0.80;    % ASSUMED
-eta_ESC_motor = 0.75;      % combined efficiency, ASSUMED
+avionics_power = 20;       % W, ASSUMED
+usable_fraction = 0.750;    % ASSUMED
+eta_ESC_motor = 0.8;      % combined efficiency, ASSUMED
 motor_KV = 880;            % RPM/V
 ESC_current_limit = 30;    % A, assumed battery-side per-rotor limit
 
@@ -22,15 +22,27 @@ sigma_e = 0.0707; % not in pollet
 % T_design_per_rotor = TWR_required*W/N_rotors;
 
 % variabel
-V_inf = 1:1:10;       
+V_inf = 1e-6:.5:15.1;       
 % alpha = deg2rad(1:4:45); % Incidence angle (rad)
 propellers = [9 4.5; 9 4.7; 10 4.5; 10 4.7];
-RPM_values = 3000:500:9000;
-batteries = [4 5.2 0.50 30;
-             4 6.5 0.60 30;
-             6 5.0 0.72 30];
-battery_names = {'4S_5200', '4S_6500', '6S_5000'};
+RPM_values = 4000:500:9000;
+batteries = [
+    4  5.2   0.490  50;
+    4  6.5   0.550  60;
+    4  7.2   0.630  50;
+    4 10.0   0.890  25;
+    6  2.6   0.410  50;
+    6  3.7   0.590  50;
+    6  4.5   0.715  65;
+    6  5.2   0.74   50;
+    6  8.0   1.100  25
+    ];
 
+battery_names = {
+    '4S_5200', '4S_6500', '4S_7200', '4S_10000', ...
+    '6S_2600', '6S_3700', '6S_4500', '6S_5200', ...
+    '6S_8000'
+    };
 %% 3. Calculate all combinations
 all_rows = struct([]);
 matched_rows = struct([]);
@@ -79,10 +91,10 @@ for i = 1:size(propellers,1)
         RPM_no_load = motor_KV * V_battery; % ideal ceiling, NOT motor validation
 
         theta_FP = 0;
-        Cd_frame = 1;
-        Cl_frame = 1;
-        S_top = 1;
-        S_front = 1;
+        Cd_frame = 0.425;
+        Cl_frame = 0.193;
+        S_top = 0.226;
+        S_front = 0.09;
 
         % Same columns and calculation as Python 'common' fields
         common = struct('Propeller',sprintf('%gx%g',diameter_in,pitch_in), ...
@@ -137,19 +149,21 @@ for i = 1:size(propellers,1)
                     + 0.35712*beta^2 - 0.23774*beta^3 ...
                     + 0.07549*beta*J_axial - 0.1235*J_axial^2;
 
-                delta = (3/2) * cos(beta_prime) * ...
-                    (1 + (sigma_e / tan(beta_prime)) * ...
+                % Incidence correction
+                delta = (3/2)*cos(beta_prime) * ...
+                    (1 + (sigma_e/tan(beta_prime)) * ...
                     (1 + sqrt(1 + 2*tan(beta_prime)/sigma_e)) * ...
-                    (1 - cos(alpha)));
-                numerator = (J * cos(alpha) / (pi*r_prime))^2;
-                
-                eta_T = 1 + numerator * delta / ...
-                    (2 * (1 - J_axial / J0T));
-                eta_P = 1 + numerator * delta / ...
-                    (2 * (1 - J_axial / J0P));
+                    (1 - sin(alpha)));
+                numerator = (J*cos(alpha)/(pi*r_prime))^2;
 
-                CT_corrected = eta_T * CT_axial;
-                CP_corrected = eta_P * CP_axial;
+                eta_T = 1 + numerator*delta / ...
+                    (2*(1 - J_axial/J0T));
+
+                eta_P = 1 + numerator*delta / ...
+                    (2*(1 - J_axial/J0P));
+
+                CT_corrected = eta_T*CT_axial;
+                CP_corrected = eta_P*CP_axial;
 
                 Thrust = CT_corrected * rho * n^2 * D^4;
                 Pshaft = CP_corrected * rho * n^3 * D^5;
@@ -179,7 +193,7 @@ for i = 1:size(propellers,1)
                 row.EstimatedEndurance_min = endurance_min;
                 row.EstimatedDCInputPerRotor_A = I_rotor;
                 
-                row.EnoughThrust = Thrust >= T_hover;
+                row.EnoughThrust = Thrust >= T_required;
                 row.RequiredThrustPerRotor_N = T_required;
                 row.ThrustError_N = Thrust - T_required;
                 row.BelowIdealNoLoadRPM = RPM < RPM_no_load;
@@ -244,7 +258,7 @@ for i = 1:size(propellers,1)
                 delta = (3/2)*cos(beta_prime) * ...
                     (1 + sigma_e/tan(beta_prime) * ...
                     (1 + sqrt(1+2*tan(beta_prime)/sigma_e)) ...
-                    *(1-cos(alpha)));
+                    *(1-sin(alpha)));
 
                 numerator = (J*cos(alpha)/(pi*r_prime))^2;
 
@@ -366,8 +380,8 @@ ForwardMatched = struct2table(matched_rows);
 size(ForwardAll)
 size(ForwardMatched)
 
-writetable(ForwardAll,'forward_all_points_matlab.csv');
-writetable(ForwardMatched,'forward_matched_matlab.csv');
+writetable(ForwardAll,'theory_forward_all_points_matlab.csv');
+writetable(ForwardMatched,'theory_forward_matched_matlab.csv');
 
 fprintf('kelar\n');
 % fprintf('NOTE: APC-derived coefficients and assumed masses, efficiency, limits.\n');

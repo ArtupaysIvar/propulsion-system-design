@@ -98,7 +98,6 @@ for i = 1:size(propellers,1)
                 'BatteryMass_kg',battery_mass,'TotalMass_kg',m_total, ...
                 'NominalVoltage_V',V_battery, ...
                 'RequiredHoverThrustPerRotor_N',T_hover, ...
-                'CT_static',CT0,'CP_static',CP0, ...
                 'UsableBatteryEnergy_Wh',E_usable);
 
             n = RPM / 60;
@@ -118,6 +117,8 @@ for i = 1:size(propellers,1)
             row.TorquePerRotor_Nm = Torque;
             row.EstimatedElectricalPowerPerRotor_W = Pelec_rotor;
             row.EstimatedTotalElectricalPower_W = Pelec_total;
+            row.CT_APC = CT0;
+            row.CP_APC = CP0;
             row.EstimatedBatteryCurrent_A = I_battery;
             row.EstimatedEndurance_min = endurance_min;
             row.EstimatedDCInputPerRotor_A = I_rotor;
@@ -187,8 +188,8 @@ for i = 1:size(propellers,1)
 
         %% Save matched data
         row = common;
-        row.CT_static = CT0_hover;
-        row.CP_static = CP0_hover;
+        row.CT_APC_hover= CT0_hover;
+        row.CP_APC_hover = CP0_hover;
 
         row.RequiredHoverRPM = RPM_hover;
         row.ThrustPerRotor_N = Thrust;
@@ -262,8 +263,8 @@ end
 HoverAll = struct2table(all_rows);
 HoverMatched = struct2table(matched_rows);
 
-writetable(HoverAll,'hover_all_points_matlab.csv');
-writetable(HoverMatched,'hover_matched_matlab.csv');
+writetable(HoverAll,'APC_hover_all_points_matlab.csv');
+writetable(HoverMatched,'APC_hover_matched_matlab.csv');
 
 disp("kelar")
 
